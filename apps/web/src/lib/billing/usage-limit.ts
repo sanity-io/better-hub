@@ -1,7 +1,7 @@
 import { prisma } from "../db";
 import { getCreditBalance } from "./credit";
 import { getActiveSubscription, getCurrentPeriodUsage, getSpendingLimit } from "./spending-limit";
-import { getStripeClient } from "./stripe";
+import { getStripeClient, isStripeEnabled } from "./stripe";
 
 // Lazy migration for users created before the Stripe plugin was installed.
 // Creates a Stripe customer on first AI usage.
@@ -39,8 +39,9 @@ export async function checkUsageLimit(
 	creditExhausted?: boolean;
 	spendingLimitReached?: boolean;
 }> {
-	// 1. Custom API key — no cost to the app, always allowed
-	if (isCustomApiKey) {
+	// 1. Custom API key — no cost to the app, always allowed.
+	// Billing disabled (self-hosted, no Stripe) — nothing to enforce.
+	if (isCustomApiKey || !isStripeEnabled) {
 		return { allowed: true, current: 0, limit: 0 };
 	}
 
