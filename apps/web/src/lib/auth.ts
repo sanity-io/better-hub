@@ -36,12 +36,17 @@ export const auth = betterAuth({
 		joins: true,
 	},
 	plugins: [
-		dash({
-			activityTracking: {
-				enabled: true,
-			},
-		}),
-		sentinel(),
+		// Better Auth Infra (hosted dashboard + security checks) needs an API key
+		...(process.env.BETTER_AUTH_API_KEY
+			? [
+					dash({
+						activityTracking: {
+							enabled: true,
+						},
+					}),
+					sentinel(),
+				]
+			: []),
 		admin(),
 		patSignIn(),
 		...(isStripeEnabled
@@ -75,7 +80,13 @@ export const auth = betterAuth({
 				]
 			: []),
 		...(process.env.VERCEL
-			? [oAuthProxy({ productionURL: "https://www.better-hub.com" })]
+			? [
+					oAuthProxy({
+						productionURL:
+							process.env.BETTER_AUTH_URL ??
+							"https://www.better-hub.com",
+					}),
+				]
 			: []),
 	],
 	user: {
@@ -120,7 +131,8 @@ export const auth = betterAuth({
 			strategy: "jwe",
 		},
 	},
-	trustedOrigins: [
+	// Comma-separated override for self-hosted deployments
+	trustedOrigins: process.env.TRUSTED_ORIGINS?.split(",").map((o) => o.trim()) ?? [
 		// Production
 		"https://www.better-hub.com",
 		// Vercel preview

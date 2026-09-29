@@ -8,7 +8,10 @@ export const authClient = createAuthClient({
 	plugins: [
 		inferAdditionalFields<typeof auth>(),
 		dashClient(),
-		sentinelClient(),
+		// Sentinel fingerprints the browser via Better Auth Infra (kv.better-auth.com)
+		...(process.env.NEXT_PUBLIC_DISABLE_BETTER_AUTH_INFRA === "true"
+			? []
+			: [sentinelClient()]),
 		stripeClient({ subscription: true }),
 	],
 });
